@@ -1,2 +1,2 @@
-add_subdirectory(helloworld)
-add_subdirectory(protetorTela)
+#add_subdirectory(helloworld)
+add_subdirectory(naveEspacial)
