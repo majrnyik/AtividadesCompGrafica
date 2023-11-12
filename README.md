@@ -29,4 +29,6 @@ x=20, ele é movido para x =-20.
 
 ## Objetos
 
- Foi utilizado arquivos .obj criados no blender achados na internet e de uso gratuito para a nave e asteróides.
+ Foi utilizado arquivos .obj criados no blender achados na internet e de uso gratuito para a nave e asteróides. 
+ Para que fosse possível utilizar mais de um modelo, foi necessário instanciar programas individuais. Isso também poderia ser 
+ feito com um vetor de programas, mas, por temos apenas 2 objetos, ficou mais organizado dessa forma.
