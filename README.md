@@ -1,9 +1,8 @@
 # Atividade 2
 
  Para a atividade 2 de computação gráfica foi implementando um jogo baseado nos códigos das aulas passadas. 
-
-	* O objetivo do jogo é guiar uma espaço-nave usando as teclas 'cima, baixo, lado direito, lado esquerdo' de modo que ela não colida com nenhum asteróide. 
-	* Caso a nave colida o jogo termina com uma tela escrito 'Game Over' até que o jogador aperte outra tecla para reinicar o jogo.
+- O objetivo do jogo é guiar uma espaço-nave usando as teclas 'cima, baixo, lado direito, lado esquerdo' de modo que ela não colida com nenhum asteróide. 
+- Caso a nave colida o jogo termina com uma tela escrito 'Game Over' até que o jogador aperte outra tecla para reinicar o jogo.
 
 ***
 
