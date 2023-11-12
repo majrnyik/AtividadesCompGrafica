@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     window.setWindowSettings({
         .width = 600,
         .height = 600,
-        .title = "Starfield Effect",
+        .title = "Nave espacial no campo de asteroides",
     });
 
     app.run(window);
