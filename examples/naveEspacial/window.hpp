@@ -42,6 +42,13 @@ private:
   glm::mat4 m_projMatrix{1.0f};
   float m_FOV{30.0f};
   glm::vec3 m_shipPosition = glm::vec3(0.0f, -0.12f, -1.0f);
+  
+  //defino os deixos de rotação da nave
+  //ela não vai girar em Y, pois vai simular um avião fazendo curvas
+  glm::vec3 m_axisZNave = glm::vec3(0.0f, 0.0f, 1.0f);
+  float m_anguloZNave{0.0f};
+  glm::vec3 m_axisXNave = glm::vec3(1.0f, 0.0f, 0.0f);
+  float m_anguloXNave{0.0f};
 
   //para usermos mais de um modelo, precisamos instanciar programas individuais.
   //isso poderia ser feito com um vetor de programas, mas, por temos apenas 2 objetos, é mais organizado assim

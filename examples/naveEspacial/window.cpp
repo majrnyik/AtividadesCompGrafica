@@ -79,6 +79,8 @@ m_programNave =
   m_modelNave.setupVAO(m_programNave);
 
   
+
+  
 }
 
 
@@ -113,18 +115,31 @@ void Window::onUpdate() {
     // faço eles se moveremna direção da nave em 10 unidades por segundo
     asteroide.m_position.z += deltaTime * 10.0f;
 
+    //zero os angulos de rotação para chegarmos ao angulo correto em cada um dos eixos
+    m_anguloZNave = 0.0f;
+    m_anguloXNave = 0.0f;
+
     //eu movo os asteroides para dar a impressão de movimento da nave
     //eles vão se mover no sentido oposto ao input do jogador
     //se eu clicar para a nave ir para a direita, devo mosver meus asteroides para a esquerda
     //movo eles em velocidade uniforme, sem implementar nenhuma aceleração
-    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Left)])
+    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Left)]){
         asteroide.m_position.x += deltaTime * 3.0f;
-    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Right)])
+        //faco o angulo assim para ele ser zerado caso o usuário esteja apertando duas teclas opostas ao mesmo tempo
+        m_anguloZNave += 20.0f;
+    }
+    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Right)]){
         asteroide.m_position.x -= deltaTime * 3.0f;
-    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Up)])
+        m_anguloZNave -= 20.0f;
+    }
+    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Up)]){
         asteroide.m_position.y -= deltaTime * 3.0f;
-    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Down)])
+        m_anguloXNave += 20.0f;
+    }
+    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Down)]){
         asteroide.m_position.y += deltaTime * 3.0f;
+        m_anguloXNave -= 20.0f;
+    }
 
     //após mover o asteroide, eu verifico se ele bateu na nave
     checkCollision(asteroide);
@@ -172,10 +187,9 @@ void Window::onPaint() {
   abcg::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   abcg::glViewport(0, 0, m_viewportSize.x, m_viewportSize.y);
 
-    //se o estado do jogo não for playing (gameOver ou restart) eu não vou gerar imagem
-    //tudo que eu gerar, será o UI, que dirá GameOver
-  //if(m_gameData.m_state != State::Playing)
-    //return;
+    //se o estado do jogo não for playing (gameOVer ou restart) eu não
+  if(m_gameData.m_state != State::Playing)
+    return;
 
   abcg::glUseProgram(m_programAsteroide);
 
@@ -219,6 +233,12 @@ void Window::onPaint() {
   glm::mat4 modelMatrixNave{1.0f};
   modelMatrixNave = glm::translate(modelMatrixNave, m_shipPosition);
   modelMatrixNave = glm::scale(modelMatrixNave, glm::vec3(0.15f));
+  //agora faço duas rotações: uma no eixo z e uma em x
+  //o anguo foi definido de acordo com o input do usuário
+  //o angulo sempre será 20 graus, para dar uma eve inclinada na nave
+  modelMatrixNave = glm::rotate(modelMatrixNave, glm::radians(m_anguloXNave), m_axisXNave);
+  modelMatrixNave = glm::rotate(modelMatrixNave, glm::radians(m_anguloZNave), m_axisZNave);
+
   // Set uniform variables that have the same value for every model
   abcg::glUniformMatrix4fv(viewMatrixLocNave, 1, GL_FALSE, &m_viewMatrix[0][0]);
   abcg::glUniformMatrix4fv(projMatrixLocNave, 1, GL_FALSE, &m_projMatrix[0][0]);
@@ -233,23 +253,25 @@ void Window::onPaint() {
 void Window::onPaintUI() {
   abcg::OpenGLWindow::onPaintUI();
 
-  {
-    const auto size{ImVec2(150, 150)};
-    auto const position{ImVec2((m_viewportSize.x - size.x) / 2.0f,
-                               (m_viewportSize.y - size.y) / 2.0f)};
-    ImGui::SetNextWindowPos(position);
-    ImGui::SetNextWindowSize(size);
-    ImGuiWindowFlags flags{ImGuiWindowFlags_NoBackground |
-                           ImGuiWindowFlags_NoTitleBar |
-                           ImGuiWindowFlags_NoInputs};
-    ImGui::Begin(" ", nullptr, flags);
+  
+    {
+        //defino uma janela de 150 por 150 para aparecer o texto de game over
+        const auto size{ImVec2(150, 150)};
+        //posiciono ela bem no centro da tela
+        const auto position{ImVec2((m_viewportSize.x - size.x) / 2.0f,
+                                (m_viewportSize.y - size.y) / 2.0f)};
+        ImGui::SetNextWindowPos(position);
+        ImGui::SetNextWindowSize(size);
+        //torno ela "invisivel". Só aparecerá o texto quando perder
+        ImGuiWindowFlags flags{ImGuiWindowFlags_NoBackground |
+                            ImGuiWindowFlags_NoTitleBar |
+                            ImGuiWindowFlags_NoInputs};
+        ImGui::Begin(" ", nullptr, flags);
+        //imprimo o game over
+        if (m_gameData.m_state == State::GameOver) {
+        ImGui::Text("Game Over!");
+    }
     
-
-    if (m_gameData.m_state == State::GameOver) {
-      ImGui::Text("Game Over!");
-    } 
-
-    ImGui::PopFont();
     ImGui::End();
   }
 }
