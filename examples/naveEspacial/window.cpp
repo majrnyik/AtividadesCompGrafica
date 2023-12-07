@@ -51,39 +51,38 @@ void Window::onCreate() {
 
 //crio o programa do asteroide
   m_programAsteroide =
-      abcg::createOpenGLProgram({{.source = assetsPath + "depth.vert",
+      abcg::createOpenGLProgram({{.source = assetsPath + "texture.vert",
                                   .stage = abcg::ShaderStage::Vertex},
-                                 {.source = assetsPath + "depth.frag",
+                                 {.source = assetsPath + "texture.frag",
                                   .stage = abcg::ShaderStage::Fragment}});
 
 
 
 //com o programa criado, eu carrego o modelo .obj
 //crio o VAO e preencho o vetor de asteroides com vários asteroides
+  m_modelAsteroide.loadDiffuseTexture(assetsPath + "textura_preda.jpg");
   m_modelAsteroide.loadObj(assetsPath + "10464_Asteroid_v1_Iterations-2.obj");
+  
   m_modelAsteroide.setupVAO(m_programAsteroide);
   // Setup asteroides
   for (auto &asteroide : m_asteroides) {
     randomizeAsteroides(asteroide);
   }
-    
+
+
     //tenho que fazer a mesma coisa para a nave
     //criar programa, definir vertex e fragmente shader (os mesmos), carregar vao
 m_programNave =
-    abcg::createOpenGLProgram({{.source = assetsPath + "depth.vert",
+    abcg::createOpenGLProgram({{.source = assetsPath + "texture.vert",
                                 .stage = abcg::ShaderStage::Vertex},
-                                {.source = assetsPath + "depth.frag",
+                                {.source = assetsPath + "texture.frag",
                                 .stage = abcg::ShaderStage::Fragment}});
-
+  m_modelNave.loadDiffuseTexture(assetsPath + "textura_nave_principal.jpg");
   m_modelNave.loadObj(assetsPath + "nave.obj");
   m_modelNave.setupVAO(m_programNave);
 
   
-
-  
 }
-
-
 
     
 void Window::randomizeAsteroides(Asteroide &asteroide) {
@@ -91,17 +90,17 @@ void Window::randomizeAsteroides(Asteroide &asteroide) {
   //na hora de criar os asteroides, devo cria-los completamente espalhados pelo paralelepípedo
   std::uniform_real_distribution<float> distPosXY(-20.0f, 20.0f);
   std::uniform_real_distribution<float> distPosZ(-100.0f, 0.0f);
+  std::uniform_real_distribution<float> scale(0.2f, 1.5f);
 
   asteroide.m_position =
       glm::vec3(distPosXY(m_randomEngine), distPosXY(m_randomEngine),
                 distPosZ(m_randomEngine));
 
-    //usado para testar a distancia de colisão
-    //asteroide.m_position = glm::vec3(0.0f, 0.0f, -50.0f);
-
   // dou uma angulo inicial de rotação a todos os asteroides
   asteroide.m_rotationAxis = glm::sphericalRand(1.0f);
+  asteroide.m_asteroidScale = scale(m_randomEngine);
 }
+
 
 void Window::onUpdate() {
   //aqui eu atualizo a posição e a rotação dos asteroides
@@ -110,39 +109,49 @@ void Window::onUpdate() {
   auto const deltaTime{gsl::narrow_cast<float>(getDeltaTime())};
   m_angle = glm::wrapAngle(m_angle + glm::radians(90.0f) * deltaTime);
 
+  //zero os angulos de rotação para chegarmos ao angulo correto em cada um dos eixos
+  m_anguloZNave = 0.0f;
+  m_anguloXNave = 0.0f;
+  //rotaciono a nave de acordo com o movimento
+  if (m_gameData.m_input[gsl::narrow<size_t>(Input::Left)])
+        m_anguloZNave += 20.0f;
+  
+  if (m_gameData.m_input[gsl::narrow<size_t>(Input::Right)])
+      m_anguloZNave -= 20.0f;
+  
+  if (m_gameData.m_input[gsl::narrow<size_t>(Input::Up)])        
+      m_anguloXNave += 20.0f;
+  
+  if (m_gameData.m_input[gsl::narrow<size_t>(Input::Down)])        
+      m_anguloXNave -= 20.0f;
+    
+
   // Update asteroides
   for (auto &asteroide : m_asteroides) {
-    // faço eles se moveremna direção da nave em 10 unidades por segundo
-    asteroide.m_position.z += deltaTime * 10.0f;
+    // faço eles se moveremna direção da nave 
+    //eu divido pela escala, de forma que pedras grandes se movam devagar, e as pequenas bem rápido
+    asteroide.m_position.z += (deltaTime * 10.0f) / asteroide.m_asteroidScale;
 
-    //zero os angulos de rotação para chegarmos ao angulo correto em cada um dos eixos
-    m_anguloZNave = 0.0f;
-    m_anguloXNave = 0.0f;
+   
 
     //eu movo os asteroides para dar a impressão de movimento da nave
     //eles vão se mover no sentido oposto ao input do jogador
     //se eu clicar para a nave ir para a direita, devo mosver meus asteroides para a esquerda
     //movo eles em velocidade uniforme, sem implementar nenhuma aceleração
-    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Left)]){
+    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Left)])
         asteroide.m_position.x += deltaTime * 3.0f;
-        //faco o angulo assim para ele ser zerado caso o usuário esteja apertando duas teclas opostas ao mesmo tempo
-        m_anguloZNave += 20.0f;
-    }
-    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Right)]){
+       
+    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Right)])
         asteroide.m_position.x -= deltaTime * 3.0f;
-        m_anguloZNave -= 20.0f;
-    }
-    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Up)]){
+        
+    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Up)])
         asteroide.m_position.y -= deltaTime * 3.0f;
-        m_anguloXNave += 20.0f;
-    }
-    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Down)]){
+        
+    if (m_gameData.m_input[gsl::narrow<size_t>(Input::Down)])
         asteroide.m_position.y += deltaTime * 3.0f;
-        m_anguloXNave -= 20.0f;
-    }
-
+       
     //após mover o asteroide, eu verifico se ele bateu na nave
-    checkCollision(asteroide);
+    checkCollisionAsteroide(asteroide);
 
     //se o asteroide saiu do campo de visão da camera, eu retorno ele para a posição -100 em z
     if (asteroide.m_position.z > 0.1f) {
@@ -167,21 +176,24 @@ void Window::onUpdate() {
     
 
   }
+
+
 }   
 
-void Window::checkCollision(Asteroide &asteroide){
+void Window::checkCollisionAsteroide(Asteroide &asteroide){
      
     auto const distance{
         glm::distance(m_shipPosition, asteroide.m_position)
     };
 
     //essa distância foi decidida na tentativa e erro. Acho que ficou boa.
-    if (distance < 0.5f) {
+    //if (distance < 0.5f) {
+    if(distance < (asteroide.m_asteroidScale * 0.5f + 0.15f * 0.5f)){
         m_gameData.m_state = State::GameOver;
-        //m_restartWaitTimer.restart();
     }
     
 }
+
 
 void Window::onPaint() {
   abcg::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -191,45 +203,109 @@ void Window::onPaint() {
   if(m_gameData.m_state != State::Playing)
     return;
 
-  abcg::glUseProgram(m_programAsteroide);
-
-
   //Defino a matriz de perspectiva. Ela ficará travada em 30 graus
     auto const aspect{gsl::narrow<float>(m_viewportSize.x) / gsl::narrow<float>(m_viewportSize.y)};
     m_projMatrix = glm::perspective(glm::radians(m_FOV), aspect, 0.01f, 100.0f);
 
-  // Get location of uniform variables
+  //essa parte do código localiza as variáveis que serão passadas para o vertex shader
+  //nós criamos variáveis locais que vão ser atreladas as veriáveis no shader pelo nome das variáveis no .vert
+  //obtendo todas as matrizes para o shader de blinn-Phong
   auto const viewMatrixLoc{abcg::glGetUniformLocation(m_programAsteroide, "viewMatrix")};
   auto const projMatrixLoc{abcg::glGetUniformLocation(m_programAsteroide, "projMatrix")};
-  auto const modelMatrixLoc{
-      abcg::glGetUniformLocation(m_programAsteroide, "modelMatrix")};
-  auto const colorLoc{abcg::glGetUniformLocation(m_programAsteroide, "color")};
+  auto const modelMatrixLoc{abcg::glGetUniformLocation(m_programAsteroide, "modelMatrix")};
+  auto const normalMatrixLoc{abcg::glGetUniformLocation(m_programAsteroide, "normalMatrix")};
 
-  // Set uniform variables that have the same value for every model
+  auto const lightPosLoc{abcg::glGetUniformLocation(m_programAsteroide, "lightPosWorldSpace")};
+  auto const shininessLoc{abcg::glGetUniformLocation(m_programAsteroide, "shininess")};
+  auto const IaLoc{abcg::glGetUniformLocation(m_programAsteroide, "Ia")};
+  auto const IdLoc{abcg::glGetUniformLocation(m_programAsteroide, "Id")};
+  auto const IsLoc{abcg::glGetUniformLocation(m_programAsteroide, "Is")};
+  auto const KaLoc{abcg::glGetUniformLocation(m_programAsteroide, "Ka")};
+  auto const KdLoc{abcg::glGetUniformLocation(m_programAsteroide, "Kd")};
+  auto const KsLoc{abcg::glGetUniformLocation(m_programAsteroide, "Ks")};
+  auto const diffuseTexLoc{abcg::glGetUniformLocation(m_programAsteroide, "diffuseTex")};
+  auto const mappingModeLoc{abcg::glGetUniformLocation(m_programAsteroide, "mappingMode")};
+ 
+  
+  abcg::glUseProgram(m_programAsteroide);
+
+  //agora que temos variáveis locais atreladas às veriáveis do shader
+  //podemos atribuir valores.
+  //é assim que passamos valores para o shader!
+
+  //passo os valores das matrizes de visão e projeção
   abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, &m_viewMatrix[0][0]);
   abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, &m_projMatrix[0][0]);
-  abcg::glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f); // White
+  abcg::glUniform1i(diffuseTexLoc, 0);
+  abcg::glUniform1i(mappingModeLoc, 2);//2 para mapeamento esférico
 
-  // Render each asteroide
+  //a direção da luz é a mesma para tudo
+  abcg::glUniform4fv(lightPosLoc, 1, &m_lightPos.x);
+
+  //aqui eu defino as características do material
+  //Como todos os asteróides são feitos de asteroide, posso definir valores fixos e poupar processamento
+  abcg::glUniform4fv(IaLoc, 1, &m_IaAsteroide.x);
+  abcg::glUniform4fv(IdLoc, 1, &m_IdAsteroide.x);
+  abcg::glUniform4fv(IsLoc, 1, &m_IsAsteroide.x);
+  abcg::glUniform4fv(KaLoc, 1, &m_KaAsteroide.x);
+  abcg::glUniform4fv(KdLoc, 1, &m_KdAsteroide.x);
+  abcg::glUniform4fv(KsLoc, 1, &m_KsAsteroide.x);
+  abcg::glUniform1f(shininessLoc, m_shininessAsteroide);
+
+  
+  
+  //com as variáveis imutáveis preenchidas no shader, eu vou criar cada asteróide
   for (auto &asteroide : m_asteroides) {
-    // Compute model matrix of the current asteroide
+    //crio a matriz de modelo de cada asteroide.
+    //a matriz de modelo é única para cada objeto, pois ele terá posição e ângulo unicos
+
+    //crio uma matriz identidade
     glm::mat4 modelMatrix{1.0f};
+    //transformo a matriz para dar o efeito para cada asteróide
     modelMatrix = glm::translate(modelMatrix, asteroide.m_position);
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(0.6f));
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(asteroide.m_asteroidScale));
     modelMatrix = glm::rotate(modelMatrix, m_angle, asteroide.m_rotationAxis);
 
-    // Set uniform variable
+    //com a matriz de modelo feita, posso calcular minha matriz de modelView
+    //ess matriz transforma o universo do objeto no universo da camera
+    auto const modelViewMatrix{glm::mat4(m_viewMatrix * modelMatrix)};
+
+    //calculo a matriz de normais, que depende do objeto no universo da camera (por isso usamos a modelViewMatrix)
+    auto const normalMatrix{glm::inverseTranspose(glm::mat3(modelViewMatrix))};
+
+    //como já havia atrelado a variável local com a variável do shader, basta colocar valores
+    //insiro a matriz de normais no meu shader
+    abcg::glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, &normalMatrix[0][0]);
+    //insiro a matriz de modelo no meu shader
     abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &modelMatrix[0][0]);
+
+    //finalmente eu faço a renderização
     m_modelAsteroide.render();
   }
 
+  
   abcg::glUseProgram(m_programNave);
-  auto const viewMatrixLocNave{abcg::glGetUniformLocation(m_programNave, "viewMatrix")};
-  auto const projMatrixLocNave{abcg::glGetUniformLocation(m_programNave, "projMatrix")};
-  auto const modelMatrixLocNave{
-      abcg::glGetUniformLocation(m_programNave, "modelMatrix")};
-  auto const colorLocNave{abcg::glGetUniformLocation(m_programNave, "color")};
 
+  //como mudei de programa, tenho que fazer todas as atribuições dos shaders novamente!
+  abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, &m_viewMatrix[0][0]);
+  abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, &m_projMatrix[0][0]);
+  abcg::glUniform1i(diffuseTexLoc, 0);
+  abcg::glUniform1i(mappingModeLoc, 3);//3 para mapeamento from mesh
+
+  //a direção da luz é a mesma para tudo
+  abcg::glUniform4fv(lightPosLoc, 1, &m_lightPos.x);
+
+  //aqui eu defino as características do material
+  abcg::glUniform4fv(IaLoc, 1, &m_IaNave.x);
+  abcg::glUniform4fv(IdLoc, 1, &m_IdNave.x);
+  abcg::glUniform4fv(IsLoc, 1, &m_IsNave.x);
+
+  abcg::glUniform4fv(KaLoc, 1, &m_KaNave.x);
+  abcg::glUniform4fv(KdLoc, 1, &m_KdNave.x);
+  abcg::glUniform4fv(KsLoc, 1, &m_KsNave.x);
+  abcg::glUniform1f(shininessLoc, m_shininessNave);
+
+  
   glm::mat4 modelMatrixNave{1.0f};
   modelMatrixNave = glm::translate(modelMatrixNave, m_shipPosition);
   modelMatrixNave = glm::scale(modelMatrixNave, glm::vec3(0.15f));
@@ -239,11 +315,16 @@ void Window::onPaint() {
   modelMatrixNave = glm::rotate(modelMatrixNave, glm::radians(m_anguloXNave), m_axisXNave);
   modelMatrixNave = glm::rotate(modelMatrixNave, glm::radians(m_anguloZNave), m_axisZNave);
 
-  // Set uniform variables that have the same value for every model
-  abcg::glUniformMatrix4fv(viewMatrixLocNave, 1, GL_FALSE, &m_viewMatrix[0][0]);
-  abcg::glUniformMatrix4fv(projMatrixLocNave, 1, GL_FALSE, &m_projMatrix[0][0]);
-  abcg::glUniform4f(colorLocNave, 1.0f, 1.0f, 1.0f, 1.0f); // White
-  abcg::glUniformMatrix4fv(modelMatrixLocNave, 1, GL_FALSE, &modelMatrixNave[0][0]);
+    auto const modelViewMatrix{glm::mat4(m_viewMatrix * modelMatrixNave)};
+    //calculo a matriz de normais, que depende do objeto no universo da camera (por isso usamos a modelViewMatrix)
+    auto const normalMatrix{glm::inverseTranspose(glm::mat3(modelViewMatrix))};
+
+    //como já havia atrelado a variável local com a variável do shader, basta colocar valores
+    //insiro a matriz de normais no meu shader
+    abcg::glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, &normalMatrix[0][0]);
+    //insiro a matriz de modelo no meu shader
+    abcg::glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, &modelMatrixNave[0][0]);
+
 
   m_modelNave.render();
 
