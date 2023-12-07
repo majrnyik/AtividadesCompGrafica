@@ -4,6 +4,9 @@ Beatriz C. M. Farkas. RA: 11201722860
 Felipe P. Franke. RA: 11201721293
 
 ***
+## OBS:
+Não conseguimos fazer o WebAssembly rodar até o momento da aula do dia 06/12.
+
 ## Descrição Geral 
   Para a atividade 3 foi implementado um jogo baseado em ‘Space Invaders’ no qual o objetivo é guiar uma nave no espaço de forma que ela não colida como nenhum asteroide.
 - O objetivo do jogo é guiar uma espaço-nave usando as teclas 'cima, baixo, lado direito, lado esquerdo' de modo que ela não colida com nenhum asteróide. 
