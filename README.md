@@ -1,4 +1,4 @@
-# Atividade 3
+# The Expanse
 
 Beatriz C. M. Farkas. RA: 11201722860
 Felipe P. Franke. RA: 11201721293
